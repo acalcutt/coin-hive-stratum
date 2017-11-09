@@ -14,7 +14,9 @@ let connectionToHashesPerSecond = new Map();
 let lastConnectionId = 0;
 
 function getTotalHashesPerSecond () {
-	return Array.from(connectionToHashesPerSecond.values()).reduce((cur, prev) => cur + prev);
+  const values = Array.from(connectionToHashesPerSecond.values());
+  if (values.length === 0) return 0;
+	return values.reduce((cur, prev) => cur + prev);
 }
 
 function getHashStats () {
