@@ -12,6 +12,11 @@ const minerConnections = {};
 let connectionToHashesPerSecond = new Map();
 
 let lastConnectionId = 0;
+
+function getTotalHashesPerSecond () {
+	return Array.from(connectionToHashesPerSecond.values()).reduce((cur, prev) => cur + prev);
+}
+
 function createConnection(ws, options) {
   log("new miner connection");
   const id = lastConnectionId++;
@@ -36,8 +41,8 @@ function createConnection(ws, options) {
     donation: false
   };
   connection.ws.on("message", function(message) {
+		var data = JSON.parse(message);
     if (!connection.connected) {
-      var data = JSON.parse(message);
 
       if (data.type == "auth") {
         connection.address = data.params.site_key;
@@ -642,4 +647,7 @@ function createProxy(constructorOptions = defaults) {
   };
 }
 
-module.exports = createProxy;
+module.exports = {
+  createProxy,
+	getTotalHashesPerSecond
+};
