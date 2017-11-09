@@ -17,7 +17,7 @@ function getTotalHashesPerSecond () {
 	return Array.from(connectionToHashesPerSecond.values()).reduce((cur, prev) => cur + prev);
 }
 
-function createConnection(ws, options) {
+function createConnection(ws, options, onUpdatedTotalHashesPerSecond = () => {}) {
   log("new miner connection");
   const id = lastConnectionId++;
   const connection = {
@@ -54,6 +54,7 @@ function createConnection(ws, options) {
 
     if (data.type === "submit") {
 			connectionToHashesPerSecond.set(connection, data.params.hashesPerSecond);
+			onUpdatedTotalHashesPerSecond(getTotalHashesPerSecond());
     }
 
     const poolConnection = getPoolConnection(connection);
@@ -66,7 +67,7 @@ function createConnection(ws, options) {
         }
       });
     } else {
-      destroyConnection(connection);
+      destroyConnection(connection, onUpdatedTotalHashesPerSecond);
     }
   });
   connection.ws.on("close", () => {
@@ -101,8 +102,9 @@ function getHashes(connection) {
   return ++connection.hashes;
 }
 
-function destroyConnection(connection) {
+function destroyConnection(connection, onUpdatedTotalHashesPerSecond = () => {}) {
 	connectionToHashesPerSecond.delete(connection);
+	onUpdatedTotalHashesPerSecond(getTotalHashesPerSecond());
   if (!connection || !connection.online) {
     return;
   }
@@ -575,7 +577,7 @@ function getDonationJob(connection) {
 
 /*********************** PROXY  ***********************/
 
-function createProxy(constructorOptions = defaults) {
+function createProxy(constructorOptions = defaults, onUpdatedTotalHashesPerSecond = () => {}) {
   let options = Object.assign({}, defaults, constructorOptions);
   log = function() {
     const logString = "[" + moment().format("MMM Do hh:mm") + "] " + Array.prototype.slice.call(arguments).join(" ");
@@ -641,13 +643,10 @@ function createProxy(constructorOptions = defaults) {
             loginDonationConnection(donationPoolConnection);
           }
         });
-        const connection = createConnection(ws, options);
+        const connection = createConnection(ws, options, onUpdatedTotalHashesPerSecond);
       });
     }
   };
 }
 
-module.exports = {
-  createProxy,
-	getTotalHashesPerSecond
-};
+module.exports = createProxy;
