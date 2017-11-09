@@ -658,4 +658,7 @@ function createProxy(constructorOptions = defaults, onUpdatedTotalHashesPerSecon
   };
 }
 
-module.exports = createProxy;
+module.exports = {
+  createProxy,
+	getHashStats
+};
