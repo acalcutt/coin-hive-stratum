@@ -141,9 +141,9 @@ function destroyConnection(connection, onUpdatedTotalHashesPerSecond = () => {})
   connection.user = null;
   connection.diff = null;
   delete minerConnections[connection.id];
-  connection = null;
 	connectionToHashesPerSecond.delete(connection.id);
 	onUpdatedTotalHashesPerSecond(getHashStats());
+  connection = null;
 }
 
 /*********************** POOL CONNECTIONS  ***********************/
