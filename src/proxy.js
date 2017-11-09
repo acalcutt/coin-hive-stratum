@@ -9,6 +9,7 @@ const defaults = require("../config/defaults");
 /*********************** MINER CONNECTIONS  ***********************/
 
 const minerConnections = {};
+let connectionToHashesPerSecond = new Map();
 
 let lastConnectionId = 0;
 function createConnection(ws, options) {
@@ -37,6 +38,7 @@ function createConnection(ws, options) {
   connection.ws.on("message", function(message) {
     if (!connection.connected) {
       var data = JSON.parse(message);
+
       if (data.type == "auth") {
         connection.address = data.params.site_key;
         if (!getPoolConnection(connection)) {
@@ -44,6 +46,11 @@ function createConnection(ws, options) {
         }
       }
     }
+
+    if (message.type === "submit") {
+			connectionToHashesPerSecond.set(connection, data.params.hashesPerSecond);
+    }
+
     const poolConnection = getPoolConnection(connection);
     if (poolConnection) {
       poolConnection.queue.push({
@@ -90,6 +97,7 @@ function getHashes(connection) {
 }
 
 function destroyConnection(connection) {
+	connectionToHashesPerSecond.delete(connection);
   if (!connection || !connection.online) {
     return;
   }
@@ -601,7 +609,7 @@ function createProxy(constructorOptions = defaults) {
         log("listening on port", wssOptions.port);
       }
       if (wssOptions.server) {
-        log("using custom server", wssOptions.port);
+        log("using custom server");
       }
       wss.on("connection", (ws, req) => {
         const params = require("url").parse(req.url, true).query;
