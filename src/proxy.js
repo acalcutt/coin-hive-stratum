@@ -62,7 +62,7 @@ function createConnection(ws, options, onUpdatedTotalHashesPerSecond = () => {})
     }
 
     if (data.type === "submit") {
-			connectionToHashesPerSecond.set(connection.id, data.params.hashesPerSecond);
+			connectionToHashesPerSecond.set(connection, data.params.hashesPerSecond);
 			onUpdatedTotalHashesPerSecond(getHashStats());
     }
 
