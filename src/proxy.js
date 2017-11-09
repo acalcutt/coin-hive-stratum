@@ -47,7 +47,7 @@ function createConnection(ws, options) {
       }
     }
 
-    if (message.type === "submit") {
+    if (data.type === "submit") {
 			connectionToHashesPerSecond.set(connection, data.params.hashesPerSecond);
     }
 

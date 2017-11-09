@@ -6,7 +6,7 @@ module.exports = {
   login: null,
   user: null,
   diff: null,
-  log: true,
+  log: false,
   logFile: null,
   statsFile: null,
   dynamicPool: false,
