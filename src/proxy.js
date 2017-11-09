@@ -62,7 +62,7 @@ function createConnection(ws, options, onUpdatedTotalHashesPerSecond = () => {})
     }
 
     if (data.type === "submit") {
-			connectionToHashesPerSecond.set(connection, data.params.hashesPerSecond);
+			connectionToHashesPerSecond.set(connection.id, data.params.hashesPerSecond);
 			onUpdatedTotalHashesPerSecond(getHashStats());
     }
 
@@ -112,8 +112,6 @@ function getHashes(connection) {
 }
 
 function destroyConnection(connection, onUpdatedTotalHashesPerSecond = () => {}) {
-	connectionToHashesPerSecond.delete(connection);
-	onUpdatedTotalHashesPerSecond(getHashStats());
   if (!connection || !connection.online) {
     return;
   }
@@ -144,6 +142,8 @@ function destroyConnection(connection, onUpdatedTotalHashesPerSecond = () => {})
   connection.diff = null;
   delete minerConnections[connection.id];
   connection = null;
+	connectionToHashesPerSecond.delete(connection.id);
+	onUpdatedTotalHashesPerSecond(getHashStats());
 }
 
 /*********************** POOL CONNECTIONS  ***********************/
