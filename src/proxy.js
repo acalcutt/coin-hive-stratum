@@ -63,8 +63,10 @@ function createConnection(ws, options, onUpdatedTotalHashesPerSecond = () => {})
 
     if (data.type === "submit") {
 			connectionToHashesPerSecond.set(id, data.params.hashesPerSecond);
-			onUpdatedTotalHashesPerSecond(getHashStats());
     }
+
+    // Always submit this event for any event
+		onUpdatedTotalHashesPerSecond(getHashStats());
 
     const poolConnection = getPoolConnection(connection);
     if (poolConnection) {
