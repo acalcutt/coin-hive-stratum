@@ -1,4 +1,5 @@
 node_modules
+.idea
 static
 test.js
 test.html
