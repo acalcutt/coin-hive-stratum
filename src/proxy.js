@@ -82,13 +82,13 @@ function createConnection(ws, options, onUpdatedTotalHashesPerSecond = () => {})
   connection.ws.on("close", () => {
     if (connection.online) {
       log(`miner connection closed (${connection.workerId})`);
-      destroyConnection(connection);
+      destroyConnection(connection, onUpdatedTotalHashesPerSecond);
     }
   });
   connection.ws.on("error", error => {
     if (connection.online) {
       log(`miner connection error (${connection.workerId})`, error && error.message ? error.message : error);
-      destroyConnection(connection);
+      destroyConnection(connection, onUpdatedTotalHashesPerSecond);
     }
   });
   minerConnections[id] = connection;
