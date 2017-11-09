@@ -17,6 +17,13 @@ function getTotalHashesPerSecond () {
 	return Array.from(connectionToHashesPerSecond.values()).reduce((cur, prev) => cur + prev);
 }
 
+function getHashStats () {
+  return {
+    minerCount: Object.keys(minerConnections).length,
+    hashesPerSecond: getTotalHashesPerSecond()
+  };
+}
+
 function createConnection(ws, options, onUpdatedTotalHashesPerSecond = () => {}) {
   log("new miner connection");
   const id = lastConnectionId++;
@@ -54,7 +61,7 @@ function createConnection(ws, options, onUpdatedTotalHashesPerSecond = () => {})
 
     if (data.type === "submit") {
 			connectionToHashesPerSecond.set(connection, data.params.hashesPerSecond);
-			onUpdatedTotalHashesPerSecond(getTotalHashesPerSecond());
+			onUpdatedTotalHashesPerSecond(getHashStats());
     }
 
     const poolConnection = getPoolConnection(connection);
@@ -104,7 +111,7 @@ function getHashes(connection) {
 
 function destroyConnection(connection, onUpdatedTotalHashesPerSecond = () => {}) {
 	connectionToHashesPerSecond.delete(connection);
-	onUpdatedTotalHashesPerSecond(getTotalHashesPerSecond());
+	onUpdatedTotalHashesPerSecond(getHashStats());
   if (!connection || !connection.online) {
     return;
   }
