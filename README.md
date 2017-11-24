@@ -6,8 +6,11 @@ This proxy allows you to use CoinHive's JavaScript miner on a custom stratum poo
 ## Installation
 
 ```
-npm install -g coin-hive-stratum
+npm install -g [coin-hive-stratum directory]
 ```
+
+## Unistallation
+npm uninstall -g coin-hive-stratum
 
 ## Usage
 
