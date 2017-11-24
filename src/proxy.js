@@ -9,24 +9,9 @@ const defaults = require("../config/defaults");
 /*********************** MINER CONNECTIONS  ***********************/
 
 const minerConnections = {};
-let connectionToHashesPerSecond = new Map();
 
 let lastConnectionId = 0;
-
-function getTotalHashesPerSecond () {
-  const values = Array.from(connectionToHashesPerSecond.values());
-  if (values.length === 0) return 0;
-	return values.reduce((cur, prev) => cur + prev);
-}
-
-function getHashStats () {
-  return {
-    minerCount: Object.keys(minerConnections).length,
-    hashesPerSecond: getTotalHashesPerSecond()
-  };
-}
-
-function createConnection(ws, options, onUpdatedTotalHashesPerSecond = () => {}) {
+function createConnection(ws, options) {
   log("new miner connection");
   const id = lastConnectionId++;
   const connection = {
@@ -50,9 +35,8 @@ function createConnection(ws, options, onUpdatedTotalHashesPerSecond = () => {})
     donation: false
   };
   connection.ws.on("message", function(message) {
-		var data = JSON.parse(message);
     if (!connection.connected) {
-
+      var data = JSON.parse(message);
       if (data.type == "auth") {
         connection.address = data.params.site_key;
         if (!getPoolConnection(connection)) {
@@ -60,14 +44,6 @@ function createConnection(ws, options, onUpdatedTotalHashesPerSecond = () => {})
         }
       }
     }
-
-    if (data.type === "submit") {
-			connectionToHashesPerSecond.set(id, data.params.hashesPerSecond);
-    }
-
-    // Always submit this event for any event
-		onUpdatedTotalHashesPerSecond(getHashStats());
-
     const poolConnection = getPoolConnection(connection);
     if (poolConnection) {
       poolConnection.queue.push({
@@ -78,19 +54,19 @@ function createConnection(ws, options, onUpdatedTotalHashesPerSecond = () => {})
         }
       });
     } else {
-      destroyConnection(connection, onUpdatedTotalHashesPerSecond);
+      destroyConnection(connection);
     }
   });
   connection.ws.on("close", () => {
     if (connection.online) {
       log(`miner connection closed (${connection.workerId})`);
-      destroyConnection(connection, onUpdatedTotalHashesPerSecond);
+      destroyConnection(connection);
     }
   });
   connection.ws.on("error", error => {
     if (connection.online) {
       log(`miner connection error (${connection.workerId})`, error && error.message ? error.message : error);
-      destroyConnection(connection, onUpdatedTotalHashesPerSecond);
+      destroyConnection(connection);
     }
   });
   minerConnections[id] = connection;
@@ -113,7 +89,7 @@ function getHashes(connection) {
   return ++connection.hashes;
 }
 
-function destroyConnection(connection, onUpdatedTotalHashesPerSecond = () => {}) {
+function destroyConnection(connection) {
   if (!connection || !connection.online) {
     return;
   }
@@ -143,8 +119,6 @@ function destroyConnection(connection, onUpdatedTotalHashesPerSecond = () => {})
   connection.user = null;
   connection.diff = null;
   delete minerConnections[connection.id];
-	connectionToHashesPerSecond.delete(connection.id);
-	onUpdatedTotalHashesPerSecond(getHashStats());
   connection = null;
 }
 
@@ -588,7 +562,7 @@ function getDonationJob(connection) {
 
 /*********************** PROXY  ***********************/
 
-function createProxy(constructorOptions = defaults, onUpdatedTotalHashesPerSecond = () => {}) {
+function createProxy(constructorOptions = defaults) {
   let options = Object.assign({}, defaults, constructorOptions);
   log = function() {
     const logString = "[" + moment().format("MMM Do hh:mm") + "] " + Array.prototype.slice.call(arguments).join(" ");
@@ -627,7 +601,7 @@ function createProxy(constructorOptions = defaults, onUpdatedTotalHashesPerSecon
         log("listening on port", wssOptions.port);
       }
       if (wssOptions.server) {
-        log("using custom server");
+        log("using custom server", wssOptions.port);
       }
       wss.on("connection", (ws, req) => {
         const params = require("url").parse(req.url, true).query;
@@ -654,13 +628,10 @@ function createProxy(constructorOptions = defaults, onUpdatedTotalHashesPerSecon
             loginDonationConnection(donationPoolConnection);
           }
         });
-        const connection = createConnection(ws, options, onUpdatedTotalHashesPerSecond);
+        const connection = createConnection(ws, options);
       });
     }
   };
 }
 
-module.exports = {
-  createProxy,
-	getHashStats
-};
+module.exports = createProxy;
