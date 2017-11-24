@@ -10,7 +10,9 @@ npm install -g [coin-hive-stratum directory]
 ```
 
 ## Uninstallation
+```
 npm uninstall -g coin-hive-stratum
+```
 
 ## Usage
 
