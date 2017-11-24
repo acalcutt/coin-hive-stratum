@@ -3,13 +3,15 @@ module.exports = {
   port: 4444,
   pass: "x",
   tls: false,
-  login: null,
+  address: null,
   user: null,
   diff: null,
   log: false,
   logFile: null,
   statsFile: null,
   dynamicPool: false,
+  path: null,
+  maxMinersPerConnection: 100,
   donations: [
   ]
 };
