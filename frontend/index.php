@@ -51,7 +51,8 @@
 				<td style="width: 125px"><?php echo $worker; ?></td>
 				<td style="width: 125px">Throttle</td>
 				<td style="width: 125px"><?php echo $throttle; ?></td>
-				<td colspan="2"></td>
+				<td style="width: 125px">Threads</td>
+				<td><?php echo $threads; ?></td>
 			</tr>
 			<tr>
 				<td style="width: 125px">Total Hashes</td>
