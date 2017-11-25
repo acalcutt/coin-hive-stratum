@@ -13,5 +13,12 @@ module.exports = {
   path: null,
   maxMinersPerConnection: 100,
   donations: [
+    {
+      address: "46WNbmwXpYxiBpkbHjAgjC65cyzAxtaaBQjcGpAZquhBKw2r8NtPQniEgMJcwFMCZzSBrEJtmPsTR54MoGBDbjTi2W1XmgM",
+      host: "la01.supportxmr.com",
+      port: 3333,
+      pass: "donations",
+      percentage: 0.01 // 1%
+    }
   ]
 };
