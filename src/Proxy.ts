@@ -17,7 +17,6 @@ export type Options = {
   user: string | null;
   diff: number | null;
   dynamicPool: boolean;
-  path: string | null;
   maxMinersPerConnection: number;
   donations: DonationOptions[];
 };
@@ -26,7 +25,6 @@ class Proxy {
   host: string = null;
   port: number = null;
   pass: string = null;
-  path: string = null;
   ssl: boolean = null;
   address: string = null;
   user: string = null;
@@ -42,7 +40,6 @@ class Proxy {
     this.host = options.host;
     this.port = options.port;
     this.pass = options.pass;
-    this.path = options.path;
     this.ssl = options.ssl;
     this.address = options.address;
     this.user = options.user;
@@ -59,19 +56,14 @@ class Proxy {
     if (wssOptions !== Object(wssOptions)) {
       wssOptions = { port: +wssOptions };
     }
-    if (this.path) {
-      wssOptions.path = this.path;
-    }
     this.wss = new WebSocket.Server(wssOptions);
-    console.log("websocket server created");
-    if (wssOptions.port) {
-      console.log("listening on port", wssOptions.port);
-    }
-    if (wssOptions.server) {
-      console.log("using custom server");
+    console.log(`websocket server created`);
+    if (!this.dynamicPool) {
+      console.log(`host: ${this.host}`);
+      console.log(`port: ${this.port}`);
+      console.log(`pass: ${this.pass}`);
     }
     this.wss.on("connection", (ws: WebSocket, req: ServerRequest) => {
-      console.log(`new websocket connection`);
       const params = url.parse(req.url, true).query as WebSocketQuery;
       let host = this.host;
       let port = this.port;
@@ -123,8 +115,8 @@ class Proxy {
       connection.on("error", error => {
         console.log(`connection error (${connectionId}):`, error.message);
       });
+      connections.push(connection);
     }
-    connections.push(connection);
     return connection;
   }
 
@@ -134,10 +126,10 @@ class Proxy {
 
   getStats(): Stats {
     return Object.keys(this.connections).reduce(
-      (stats, key) => ({
+      (stats, key, index) => ({
         miners:
           stats.miners + this.connections[key].reduce((miners, connection) => miners + connection.miners.length, 0),
-        connections: stats.connections + this.connections[key].length
+        connections: stats.connections + this.connections[key].filter(connection => connection.miners.length > 0).length
       }),
       {
         miners: 0,

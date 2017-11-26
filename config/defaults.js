@@ -1,8 +1,8 @@
 module.exports = {
-  host: "pool.minexmr.com",
-  port: 4444,
+  host: "pool.supportxmr.com",
+  port: 3333,
   pass: "x",
-  tls: false,
+  ssl: false,
   address: null,
   user: null,
   diff: null,
@@ -10,7 +10,6 @@ module.exports = {
   logFile: null,
   statsFile: null,
   dynamicPool: false,
-  path: null,
   maxMinersPerConnection: 100,
   donations: [
     {

@@ -1,7 +1,7 @@
 node_modules
 .idea
-static
-test.js
+static*
+test*.js
 test.html
 proxy.log
 stats.log

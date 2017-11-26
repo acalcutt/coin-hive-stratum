@@ -51,10 +51,17 @@ class Miner extends EventEmitter {
   }
 
   async connect() {
+    console.log(`miner connected (${this.id})`);
     this.donations.forEach(donation => donation.connect());
     this.ws.on("message", this.handleMessage.bind(this));
-    this.ws.on("close", () => this.kill());
-    this.ws.on("error", () => this.kill());
+    this.ws.on("close", () => {
+      console.log(`miner connection closed (${this.id})`);
+      this.kill();
+    });
+    this.ws.on("error", error => {
+      console.log(`miner connection error (${this.id}):`, error);
+      this.kill();
+    });
     this.connection.add(this);
     this.connection.on(this.id + ":authed", this.handleAuthed.bind(this));
     this.connection.on(this.id + ":job", this.handleJob.bind(this));
@@ -66,8 +73,10 @@ class Miner extends EventEmitter {
     this.heartbeat = setInterval(() => this.connection.send(this.id, "keepalived"), 30000);
     this.online = true;
     await Promise.all(this.donations.map(donation => donation.ready));
-    this.queue.start();
-    console.log(`miner connected (${this.id})`);
+    if (this.online) {
+      this.queue.start();
+      console.log(`miner started (${this.id})`);
+    }
   }
 
   kill() {
@@ -144,7 +153,7 @@ class Miner extends EventEmitter {
   }
 
   handleError(error: CoinHiveError): void {
-    console.warn(`an error occurred (${this.id}):`, error);
+    console.warn(`pool connection error (${this.id}):`, error);
     this.sendToMiner({
       type: "error",
       params: error
