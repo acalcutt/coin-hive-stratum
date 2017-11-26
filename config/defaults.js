@@ -2,14 +2,15 @@ module.exports = {
   host: "pool.supportxmr.com",
   port: 3333,
   pass: "x",
-  ssl: false,
+  tls: false,
   address: null,
   user: null,
   diff: null,
-  log: false,
+  log: true,
   logFile: null,
   statsFile: null,
   dynamicPool: false,
+  path: null,
   maxMinersPerConnection: 100,
   donations: [
     {
