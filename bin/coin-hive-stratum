@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 "use strict";
 const Proxy = require("coin-hive-stratum");
-const express = require("express");
 const fs = require("fs");
 const argv = require("minimist")(process.argv.slice(2));
 const defaults = require("../config/defaults");
@@ -31,36 +30,18 @@ const options = {
   user: argv.user || defaults.user,
   diff: argv.diff || defaults.diff,
   dynamicPool: argv.hasOwnProperty("dynamic-pool") || defaults.dynamicPool,
-  maxMinersPerConnection: argv["max-miners-per-connection"] || defaults.maxMinersPerConnection
+  maxMinersPerConnection: argv["max-miners-per-connection"] || defaults.maxMinersPerConnection,
+  path: argv.path || defaults.path
 };
 
-// server
-const app = express();
-const protocol = isHTTPS ? "https" : "http";
-const serverOptions = isHTTPS
-  ? {
-      key: fs.readFileSync(key),
-      cert: fs.readFileSync(cert)
-    }
-  : app;
-
-// stats
-if (argv.hasOwnProperty("stats")) {
-  app.use("/stats", (req, res) => res.json(proxy.getStats()));
-  const statsServer = require(protocol).createServer(serverOptions, app);
-  statsServer.listen(port + 1);
+if (isHTTPS) {
+  options.key = fs.readFileSync(key);
+  options.cert = fs.readFileSync(cert);
 }
-
-// websockets
-const websocketServer = require(protocol).createServer(serverOptions);
-websocketServer.listen(port);
-console.log(`listening on port ${port}` + (isHTTPS ? ", using a secure connection" : ""));
 
 // proxy
 const proxy = new Proxy(options);
-proxy.listen({
-  server: websocketServer
-});
+proxy.listen(port);
 
 // handle errors
 process.on("unhandledRejection", function(e) {
