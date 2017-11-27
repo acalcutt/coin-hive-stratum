@@ -2,6 +2,7 @@ import * as EventEmitter from "events";
 import * as net from "net";
 import * as tls from "tls";
 import * as uuid from "uuid";
+import Donation from "./Donation";
 import Miner from "./Miner";
 import Queue from "./Queue";
 import { connectionsCounter } from "./Metrics";
@@ -38,6 +39,7 @@ class Connection extends EventEmitter {
   auth: Dictionary<string> = {};
   minerId: Dictionary<string> = {};
   miners: Miner[] = [];
+  donations: Donation[] = [];
   donation: boolean;
 
   constructor(options: Options) {
@@ -107,16 +109,31 @@ class Connection extends EventEmitter {
     });
     // message from miner
     this.queue.on("message", (message: StratumRequest) => {
+      if (!this.online) {
+        return false;
+      }
       if (!this.socket.writable) {
-        console.warn(
-          `couldn't send message to pool (${this.host}:${this.port}) because socket is not writable: ${message}`
-        );
+        if (message.method === "keepalived") {
+          return false;
+        }
+        const retry = message.retry ? message.retry * 2 : 1;
+        const ms = retry * 100;
+        message.retry = retry;
+        setTimeout(() => {
+          this.queue.push({
+            type: "message",
+            payload: message
+          });
+        }, ms);
         return false;
       }
       try {
+        if (message.retry) {
+          delete message.retry;
+        }
         this.socket.write(JSON.stringify(message) + "\n");
       } catch (e) {
-        console.warn(`failed to send message to pool (${this.host}:${this.port}): ${message}`);
+        console.warn(`failed to send message to pool (${this.host}:${this.port}): ${JSON.stringify(message)}`);
       }
     });
     // kick it
@@ -207,8 +224,7 @@ class Connection extends EventEmitter {
           const keepAliveParams = message.params as StratumKeepAlive;
           keepAliveParams.id = this.auth[id];
         } else {
-          console.error(`unauthenticated keepalive (${id})`);
-          return;
+          return false;
         }
       }
       case "submit": {
@@ -216,8 +232,7 @@ class Connection extends EventEmitter {
           const submitParams = message.params as StratumJob;
           submitParams.id = this.auth[id];
         } else {
-          console.error(`unauthenticated job submission (${id})`);
-          return;
+          return false;
         }
       }
     }
@@ -233,13 +248,13 @@ class Connection extends EventEmitter {
     });
   }
 
-  add(miner: Miner): void {
+  addMiner(miner: Miner): void {
     if (this.miners.indexOf(miner) === -1) {
       this.miners.push(miner);
     }
   }
 
-  remove(minerId: string): void {
+  removeMiner(minerId: string): void {
     const miner = this.miners.find(x => x.id === minerId);
     if (miner) {
       this.miners = this.miners.filter(x => x.id !== minerId);
@@ -247,12 +262,26 @@ class Connection extends EventEmitter {
     }
   }
 
-  clear(minerId: string): void {
-    const auth = this.auth[minerId];
-    delete this.auth[minerId];
+  addDonation(donation: Donation): void {
+    if (this.donations.indexOf(donation) === -1) {
+      this.donations.push(donation);
+    }
+  }
+
+  removeDonation(donationId: string): void {
+    const donation = this.donations.find(x => x.id === donationId);
+    if (donation) {
+      this.donations = this.donations.filter(x => x.id !== donationId);
+      this.clear(donation.id);
+    }
+  }
+
+  clear(id: string): void {
+    const auth = this.auth[id];
+    delete this.auth[id];
     delete this.minerId[auth];
     Object.keys(this.rpc).forEach(key => {
-      if (this.rpc[key].minerId === minerId) {
+      if (this.rpc[key].minerId === id) {
         delete this.rpc[key];
       }
     });

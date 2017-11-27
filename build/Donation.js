@@ -36,6 +36,7 @@ var Donation = /** @class */ (function () {
         if (this.user) {
             login += "." + this.user;
         }
+        this.connection.addDonation(this);
         this.connection.send(this.id, "login", {
             login: login,
             pass: this.pass
@@ -51,7 +52,7 @@ var Donation = /** @class */ (function () {
         }, 5000);
     };
     Donation.prototype.kill = function () {
-        this.connection.clear(this.id);
+        this.connection.removeDonation(this.id);
         this.connection.removeAllListeners(this.id + ":job");
         this.jobs = [];
         this.taken = [];

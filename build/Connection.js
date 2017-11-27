@@ -33,6 +33,7 @@ var Connection = /** @class */ (function (_super) {
         _this.auth = {};
         _this.minerId = {};
         _this.miners = [];
+        _this.donations = [];
         _this.host = options.host;
         _this.port = options.port;
         _this.ssl = options.ssl;
@@ -100,15 +101,32 @@ var Connection = /** @class */ (function (_super) {
         });
         // message from miner
         this.queue.on("message", function (message) {
+            if (!_this.online) {
+                return false;
+            }
             if (!_this.socket.writable) {
-                console.warn("couldn't send message to pool (" + _this.host + ":" + _this.port + ") because socket is not writable: " + message);
+                if (message.method === "keepalived") {
+                    return false;
+                }
+                var retry = message.retry ? message.retry * 2 : 1;
+                var ms = retry * 100;
+                message.retry = retry;
+                setTimeout(function () {
+                    _this.queue.push({
+                        type: "message",
+                        payload: message
+                    });
+                }, ms);
                 return false;
             }
             try {
+                if (message.retry) {
+                    delete message.retry;
+                }
                 _this.socket.write(JSON.stringify(message) + "\n");
             }
             catch (e) {
-                console.warn("failed to send message to pool (" + _this.host + ":" + _this.port + "): " + message);
+                console.warn("failed to send message to pool (" + _this.host + ":" + _this.port + "): " + JSON.stringify(message));
             }
         });
         // kick it
@@ -200,8 +218,7 @@ var Connection = /** @class */ (function (_super) {
                     keepAliveParams.id = this.auth[id];
                 }
                 else {
-                    console.error("unauthenticated keepalive (" + id + ")");
-                    return;
+                    return false;
                 }
             }
             case "submit": {
@@ -210,8 +227,7 @@ var Connection = /** @class */ (function (_super) {
                     submitParams.id = this.auth[id];
                 }
                 else {
-                    console.error("unauthenticated job submission (" + id + ")");
-                    return;
+                    return false;
                 }
             }
         }
@@ -224,25 +240,37 @@ var Connection = /** @class */ (function (_super) {
             payload: message
         });
     };
-    Connection.prototype.add = function (miner) {
+    Connection.prototype.addMiner = function (miner) {
         if (this.miners.indexOf(miner) === -1) {
             this.miners.push(miner);
         }
     };
-    Connection.prototype.remove = function (minerId) {
+    Connection.prototype.removeMiner = function (minerId) {
         var miner = this.miners.find(function (x) { return x.id === minerId; });
         if (miner) {
             this.miners = this.miners.filter(function (x) { return x.id !== minerId; });
             this.clear(miner.id);
         }
     };
-    Connection.prototype.clear = function (minerId) {
+    Connection.prototype.addDonation = function (donation) {
+        if (this.donations.indexOf(donation) === -1) {
+            this.donations.push(donation);
+        }
+    };
+    Connection.prototype.removeDonation = function (donationId) {
+        var donation = this.donations.find(function (x) { return x.id === donationId; });
+        if (donation) {
+            this.donations = this.donations.filter(function (x) { return x.id !== donationId; });
+            this.clear(donation.id);
+        }
+    };
+    Connection.prototype.clear = function (id) {
         var _this = this;
-        var auth = this.auth[minerId];
-        delete this.auth[minerId];
+        var auth = this.auth[id];
+        delete this.auth[id];
         delete this.minerId[auth];
         Object.keys(this.rpc).forEach(function (key) {
-            if (_this.rpc[key].minerId === minerId) {
+            if (_this.rpc[key].minerId === id) {
                 delete _this.rpc[key];
             }
         });

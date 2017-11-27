@@ -11,6 +11,7 @@ var Donation_1 = require("./Donation");
 var Proxy = /** @class */ (function () {
     function Proxy(constructorOptions) {
         if (constructorOptions === void 0) { constructorOptions = defaults; }
+        var _this = this;
         this.host = null;
         this.port = null;
         this.pass = null;
@@ -27,6 +28,7 @@ var Proxy = /** @class */ (function () {
         this.cert = null;
         this.path = null;
         this.server = null;
+        this.purgeInterval = null;
         var options = Object.assign({}, defaults, constructorOptions);
         this.host = options.host;
         this.port = options.port;
@@ -42,6 +44,7 @@ var Proxy = /** @class */ (function () {
         this.cert = options.cert;
         this.path = options.path;
         this.server = options.server;
+        this.purgeInterval = setInterval(function () { return _this.purge(); }, 30 * 1000);
     }
     Proxy.prototype.listen = function (port) {
         var _this = this;
@@ -142,18 +145,24 @@ var Proxy = /** @class */ (function () {
             connections.push(connection);
             return connection;
         }
-        while (availableConnections.length > 1) {
+        var _loop_1 = function () {
             var unusedConnection = availableConnections.pop();
+            this_1.connections[connectionId] = this_1.connections[connectionId].filter(function (connection) { return connection.id !== unusedConnection.id; });
             unusedConnection.kill();
+        };
+        var this_1 = this;
+        while (availableConnections.length > 1) {
+            _loop_1();
         }
         return availableConnections.pop();
     };
     Proxy.prototype.isAvailable = function (connection) {
-        return connection.online && connection.miners.length < this.maxMinersPerConnection;
+        return (connection.miners.length < this.maxMinersPerConnection &&
+            connection.donations.length < this.maxMinersPerConnection);
     };
     Proxy.prototype.getStats = function () {
         var _this = this;
-        return Object.keys(this.connections).reduce(function (stats, key, index) { return ({
+        return Object.keys(this.connections).reduce(function (stats, key) { return ({
             miners: stats.miners + _this.connections[key].reduce(function (miners, connection) { return miners + connection.miners.length; }, 0),
             connections: stats.connections + _this.connections[key].filter(function (connection) { return !connection.donation; }).length
         }); }, {
@@ -163,6 +172,9 @@ var Proxy = /** @class */ (function () {
     };
     Proxy.prototype.kill = function () {
         var _this = this;
+        if (this.purgeInterval) {
+            clearInterval(this.purgeInterval);
+        }
         Object.keys(this.connections).forEach(function (connectionId) {
             var connections = _this.connections[connectionId];
             connections.forEach(function (connection) {
@@ -171,6 +183,19 @@ var Proxy = /** @class */ (function () {
             });
         });
         this.wss.close();
+    };
+    Proxy.prototype.purge = function () {
+        var _this = this;
+        Object.keys(this.connections).forEach(function (connectionId) {
+            var connections = _this.connections[connectionId];
+            var availableConnection = connections.filter(function (connection) { return _this.isAvailable(connection); });
+            var unusedConnections = availableConnection.slice(1);
+            unusedConnections.forEach(function (unusedConnection) {
+                console.log("purge (" + connectionId + "):", unusedConnection.id);
+                _this.connections[connectionId] = _this.connections[connectionId].filter(function (connection) { return connection.id !== unusedConnection.id; });
+                unusedConnection.kill();
+            });
+        });
     };
     return Proxy;
 }());

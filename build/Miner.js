@@ -93,7 +93,7 @@ var Miner = /** @class */ (function (_super) {
                             console.log("miner connection error (" + _this.id + "):", error);
                             _this.kill();
                         });
-                        this.connection.add(this);
+                        this.connection.addMiner(this);
                         this.connection.on(this.id + ":authed", this.handleAuthed.bind(this));
                         this.connection.on(this.id + ":job", this.handleJob.bind(this));
                         this.connection.on(this.id + ":accepted", this.handleAccepted.bind(this));
@@ -117,7 +117,7 @@ var Miner = /** @class */ (function (_super) {
     };
     Miner.prototype.kill = function () {
         this.queue.stop();
-        this.connection.remove(this.id);
+        this.connection.removeMiner(this.id);
         this.connection.removeAllListeners(this.id + ":authed");
         this.connection.removeAllListeners(this.id + ":job");
         this.connection.removeAllListeners(this.id + ":accepted");
