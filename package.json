@@ -1,27 +1,24 @@
 {
-  "_from": "coin-hive-stratum",
-  "_id": "coin-hive-stratum@2.1.2",
-  "_inBundle": false,
-  "_integrity": "sha512-Qjsf/aoqq8HWiLUrqWe+ARC+HG+0Naeifx2SJQuon5bGBWzLtPRmUd+3msxU4NqkOCwQi8rY9IUF8qbhHs45uA==",
-  "_location": "/coin-hive-stratum",
-  "_phantomChildren": {},
-  "_requested": {
-    "type": "tag",
-    "registry": true,
-    "raw": "coin-hive-stratum",
-    "name": "coin-hive-stratum",
-    "escapedName": "coin-hive-stratum",
-    "rawSpec": "",
-    "saveSpec": null,
-    "fetchSpec": "latest"
+  "name": "coin-hive-stratum",
+  "version": "2.1.2",
+  "description": "proxy to use CoinHive miner on any stratum pool",
+  "main": "build",
+  "scripts": {
+    "start": "`npm bin`/watch 'npm run build' src",
+    "clear:build": "rm -rf ./build && mkdir build",
+    "build:js": "`npm bin`/tsc -p tsconfig.json",
+    "build": "npm run clear:build && npm run build:js",
+    "now-start": "./bin/coin-hive-stratum 8892 --dynamic-pool"
   },
-  "_requiredBy": [
-    "#USER"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cazala/coin-hive-stratum.git"
+  },
+  "keywords": [
+    "coinhive",
+    "stratum",
+    "proxy"
   ],
-  "_resolved": "https://registry.npmjs.org/coin-hive-stratum/-/coin-hive-stratum-2.1.2.tgz",
-  "_shasum": "ca61fa51889738af3b8394fad79e91f23fc98f27",
-  "_spec": "coin-hive-stratum",
-  "_where": "/home/pool",
   "author": "",
   "bin": {
     "coin-hive-stratum": "./bin/coin-hive-stratum"
