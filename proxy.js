@@ -1,4 +1,4 @@
-const Proxy = require("coin-hive-stratum");
+const Proxy = require("./build");
 const proxy = new Proxy({
   host: "pool.supportxmr.com",
   port: 3333

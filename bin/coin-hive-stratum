@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 "use strict";
-const Proxy = require("coin-hive-stratum");
+const Proxy = require("../build");
 const fs = require("fs");
 const argv = require("minimist")(process.argv.slice(2));
 const defaults = require("../config/defaults");
