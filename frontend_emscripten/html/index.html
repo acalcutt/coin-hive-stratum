@@ -39,11 +39,17 @@ Along with that the parameters regarding the Bitcoin
 mining pool proxy are set.</p>
 <p arign="justify">The parameters are: host and port number of the pool
 as well as worker name and password.</p>
-<script src="http://peterolson.github.com/BigInteger.js/BigInteger.min.js"></script>
-<script type="text/javascript" src="/js/manager.js"></script>
+<script src="/stratum/js/BigInteger.min.js"></script>
+<script type="text/javascript" src="/stratum/js/manager.js"></script>
 <script type="text/javascript">
-var parameters = urlParseQuery(window.location.href);
-work({host:parameters["host"], port:parameters["port"], user:parameters["user"], password:parameters["password"]});
+//var parameters = urlParseQuery(window.location.href);
+
+var parameters = {};
+parameters["ws"] = 'wss://monproxy.techidiots.net/_ws_/';
+parameters["user"] = '4B5rfHVYF7R8ag71iamrFSddbV5wAN97BG5W5VsVqPJMLML9hugBngDGwVPNZYKGPqNtoz1eJYhFWEnBCpgt4cJUG8xBPB1';
+parameters["worker"] = 'test';
+
+work({ws:parameters["ws"], user:parameters["user"], password:parameters["worker"]});
 </script>
 </body>
 </html>

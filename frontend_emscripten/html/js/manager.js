@@ -73,16 +73,16 @@ function stratum(event){
     ws.close();
     return;
   }
-  switch(message.id){
-    case 0:
-      extranonce1 = message.result[1];
-      extranonce2_size = message.result[2];
-      console.log("Subscribed (" + extranonce1 + "," + extranonce2_size + ")");
-      var credentials = [configuration.user, configuration.password];
-      var message = {method:"mining.authorize", params:credentials, id:1};
-      rpc(message);
+  switch(message.type){
+    case "job":
+      var job = message.params
+	  console.log("blob " + job.blob);
+	  console.log("JobID " + job.job_id);
+	  console.log("target " + job.target);
+	  console.log("id " + job.target);
+	  handle(job);
       break;
-    case 1:
+    case "authed":
       if(message.result){
         console.log("Authorized");
       }else{
@@ -185,7 +185,8 @@ function handle(message){
 function opened(event){
   console.log("WS Opened");
   console.log(event);
-  var message = {method:"mining.subscribe", params:[], id:0};
+  var parameters = {site_key:configuration.user,type:"user",user:configuration.worker}
+  var message = {type:"auth", params:parameters};
   rpc(message);
 }
 
@@ -209,7 +210,7 @@ function closed(event){
 
 function connect(){
   var origin = urlParseHost(location.origin);
-  ws = new WebSocket("ws://" + origin + ":8080/?host=" + configuration.host + "&port=" + configuration.port);
+  ws = new WebSocket(configuration.ws);
   ws.onmessage = stratum;
   ws.onopen = opened;
   ws.onerror = failed;
@@ -220,8 +221,10 @@ function callback(event){
   if(event.data.length != 0){
     console.log("Called back with: " + event.data);
     var result = JSON.parse(event.data);
-    var parameters = [configuration.user, result.job_id, result.extranonce2_hex, result.ntime, result.nonce];
-    var message = {method:"mining.submit", params:parameters, id:next()};
+	
+	var parameters = {site_key:configuration.user,type:"user",user:configuration.worker}
+    //var parameters = [configuration.user, result.job_id, result.extranonce2_hex, result.ntime, result.nonce];
+    var message = {type:"auth", params:parameters};
     rpc(message);
   }
   worker.postMessage(JSON.stringify(job));
@@ -236,7 +239,7 @@ function works(){
 function work(configuration){
   if(works()){
     this.configuration = configuration;
-    worker = new Worker("/js/worker.js");
+    worker = new Worker("/stratum/js/worker.js");
     worker.onmessage = callback;
     connect();
   }else{
