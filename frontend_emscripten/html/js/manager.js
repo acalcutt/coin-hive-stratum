@@ -222,9 +222,8 @@ function callback(event){
     console.log("Called back with: " + event.data);
     var result = JSON.parse(event.data);
 	
-	var parameters = {site_key:configuration.user,type:"user",user:configuration.worker}
-    //var parameters = [configuration.user, result.job_id, result.extranonce2_hex, result.ntime, result.nonce];
-    var message = {type:"auth", params:parameters};
+	var parameters = {"job_id":result.job_id,"nonce":result.nonce,"result":result.hex}
+    var message = {type:"submit", params:parameters, id:next()};
     rpc(message);
   }
   worker.postMessage(JSON.stringify(job));
