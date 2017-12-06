@@ -27,33 +27,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-
-var id = 3;
-
-function next(){
-  return(id++);
-}
-
-function urlParseHost(url){
-  var re = new RegExp("^(?:f|ht)tp(?:s)?\://([^/]+)", "im");
-  return(url.match(re)[1].toString());
-}
-
-function urlParseQuery(url){
-  var re = new RegExp("[?&]+([^=&]+)=([^&]*)", "gi");
-  var map = {};
-  var parts = url.replace(re, function(ignore, key, value){map[key] = decodeURIComponent(value);});
-  return(map);
-}
-
 var ws = null;
 var worker = null;
-
-var scrypt_target = false;
-
-var extranonce1 = null;
-var extranonce2_size = null;
-var target = null;
 
 function rpc(message){
   message = JSON.stringify(message);
@@ -73,86 +48,17 @@ function stratum(event){
     ws.close();
     return;
   }
-  switch(message.type){
-    case "job":
-      var job = message.params
-	  console.log("blob " + job.blob);
-	  console.log("JobID " + job.job_id);
-	  console.log("target " + job.target);
-	  console.log("id " + job.target);
-	  handle(job);
-      break;
-    case "authed":
-      if(message.result){
-        console.log("Authorized");
-      }else{
-        setTimeout(function (){ws.close();}, 60000);
-      }
-      break;
-    case null:
-      handle(message);
-      break;
-    default:
-      console.log("The proof is " + message.result);
-  }
+  
+  handle(message);
 }
-
-function build_from_broadcast(message){
-  var job = {};
-  job.job_id = message.params[0];
-  job.prevhash = message.params[1];
-  job.coinb1 = message.params[2];
-  job.coinb2 = message.params[3];
-  job.merkle_branch = message.params[4];
-  job.version = message.params[5];
-  job.nbits = message.params[6];
-  job.ntime = message.params[7];
-  job.ntime_delta = parseInt(job.ntime, 16) - Math.round(Date.now() / 1000);
-  job.clean_jobs = message.params[8];
-  job.extranonce2 = 0;
-  return job;
-}
-
-function reverse(hexadecimal){
-  var reversed = "";
-  for(var i = 0; i < hexadecimal.length; i += 2){
-    reversed = hexadecimal.substring(i, i + 2) + reversed;
-  }
-  return reversed;
-}
-
-function pad(hexadecimal, bits){
-  var zeros = (bits / 4) - hexadecimal.length;
-  for(var i = 0; i < zeros; i++){
-    hexadecimal = "0" + hexadecimal;
-  }
-  return hexadecimal;
-}
-
-function set_difficulty(difficulty){
-  difficulty = bigInt(difficulty);
-  if(scrypt_target){
-    dif1 = bigInt("0000ffff00000000000000000000000000000000000000000000000000000000", 16);
-  }else{
-    dif1 = bigInt("00000000ffff0000000000000000000000000000000000000000000000000000", 16);
-  }
-  var aim = dif1.divide(difficulty);
-  target = reverse(pad(aim.toString(16), 256));
-}
-
-set_difficulty(1);
 
 var job = null;
 
 function handle(message){
-  switch(message.method){
-    case "mining.notify":
+  switch(message.type){
+    case "job":
       // Extract the job parameters
-      var vacancy = build_from_broadcast(message);
-      // Append the global values
-      vacancy.extranonce1 = extranonce1;
-      vacancy.extranonce2_size = extranonce2_size;
-      vacancy.target = target;
+	  var vacancy = message.params;
       // Post job template to the worker
       if(job == null){
         worker.postMessage(JSON.stringify(vacancy));
@@ -160,8 +66,11 @@ function handle(message){
       // Remember current vacancy
       job = vacancy;
       break;
-    case "mining.set_difficulty":
-      set_difficulty(message.params[0]);
+    case "authed":
+        console.log("Authorized");
+      break;
+    case "hash_accepted":
+        console.log("Hash Accepted");
       break;
     case "client.reconnect":
       if(message.params[0] != null){
@@ -191,8 +100,6 @@ function opened(event){
 }
 
 function failed(event){
-  extranonce1 = null;
-  extranonce2_size = null;
   ws.close();
   console.log("WS Error");
   console.error(event);
@@ -200,8 +107,6 @@ function failed(event){
 }
 
 function closed(event){
-  extranonce1 = null;
-  extranonce2_size = null;
   ws.close();
   console.log("WS Closed");
   console.log(event);
@@ -209,7 +114,6 @@ function closed(event){
 }
 
 function connect(){
-  var origin = urlParseHost(location.origin);
   ws = new WebSocket(configuration.ws);
   ws.onmessage = stratum;
   ws.onopen = opened;
