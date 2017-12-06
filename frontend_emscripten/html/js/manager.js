@@ -223,7 +223,7 @@ function callback(event){
     var result = JSON.parse(event.data);
 	
 	var parameters = {"job_id":result.job_id,"nonce":result.nonce,"result":result.hex}
-    var message = {type:"submit", params:parameters, id:next()};
+    var message = {type:"submit", params:parameters};
     rpc(message);
   }
   worker.postMessage(JSON.stringify(job));
